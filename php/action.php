@@ -22,7 +22,7 @@ switch (true) {
 
     case isset($_POST["reset"]):
         $email = $_POST['email']; //
-        $password = $password = $_POST['password']; //
+        $password = $_POST['password']; //
         resetPassword($email, $password);
         break;
 
