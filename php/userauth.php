@@ -1,49 +1,44 @@
 <?php
-//session_start();
 // error_reporting(0);
 // include('..config.php');
 require_once "../config.php";
 
+session_start();
 
 //register users
 function registerUser($fullnames, $email, $password, $gender, $country)
 {
     //create a connection variable using the db function in config.php
     $conn = db();
-    
     //check if user with this email already exist in the database
-    $query = "SELECT * FROM students WHERE email = '$email'";
-    $result = mysqli_query($conn, $query);
+    $check_sql = "SELECT * FROM `students` WHERE email = '$email' ";
+    $query = mysqli_query($conn, $check_sql);
+    $check = mysqli_num_rows($query);
 
-    if ($result) {
-        $row = mysqli_num_rows($result);
-        if ($row > 0) {
-            $msg = "User aleady exist, please try again";
-            echo "<script>
-            alert('$msg');
-            window.location.href='../forms/register.html';
+    if ($check == 0) {
+        // insert new user 
+        // User Id is auto generated from the SQL Auto increment function.
+        $insert_sql = "INSERT INTO `Students` (`full_names`, `country`, `email`, `gender`, `password`) 
+    VALUES ('$fullnames', '$country', '$email', '$gender', '$password')";
+        $query = mysqli_query($conn, $insert_sql);
+
+        if ($query) {
+            echo "<script> alert('User Successfully registered') 
+            window.location.href = '../forms/login.html'
             </script>";
-            exit;
+            
         } else {
-            //if the email does not exist in the database store all the data in the database as a new user
-            $query = "INSERT INTO students (full_names, country, email, gender, password) VALUES ('$fullnames', '$country', '$email', '$gender', '$password')";
-
-            $result = mysqli_query($conn, $query);
-
-            if ($result) {
-                $msg = "Registration successful";
-                echo "<script>
-                alert('$msg');
-                window.location.href='../forms/login.html';
-                </script>";
-                exit;
-            } else {
-                echo "failed. Try again";
-            }
+            echo "<script> alert('Unable to register user, Try Again Later') 
+            window.location.href = '../forms/register.html'
+            </script>";
         }
+    } else {
+        echo "<script> alert('User Email Already taken') 
+        window.location.href = '../forms/register.html'
+        </script>";
     }
-}
 
+}
 
 
 //login users
@@ -51,69 +46,76 @@ function loginUser($email, $password)
 {
     //create a connection variable using the db function in config.php
     $conn = db();
+    //open connection to the database and check if username exist in the database
+    $check_sql = "SELECT * FROM `students` WHERE email = '$email' ";
+    $query = mysqli_query($conn, $check_sql);
+    $check = mysqli_num_rows($query);
+    //if it does, check if the password is the same with what is given
+    if ($check > 0) {
+        // fetch user password
+        while ($data = mysqli_fetch_assoc($query)) {
+            $db_password = $data['password'];
+            $fullnames = $data['full_names'];
+        }
+        // password check
+        if($db_password == $password){
+            $_SESSION['username'] = $fullnames;
+            header('location: ../dashboard.php');
 
-    // echo "<h1 style='color: red'> LOG ME IN (IMPLEMENT ME) </h1>";
-    // open connection to the database and check if username exist in the database    
-    // if it does, check if the password is the same with what is given
-    $query = "SELECT * FROM students WHERE email = '$email' AND password = '$password'";
-
-    $result = mysqli_query($conn, $query);
-
-    // if true then set user session for the user and redirect to the dasbboard
-    if ($result) {
-        $row = mysqli_num_rows($result);
-        if ($row > 0) {
-            
-            session_start();
-            $_SESSION['email'] = $email;
-
-            $msg = "Login successful";
-            echo "<script>
-            alert('$msg');
-            window.location.href='../dashboard.php';
-            </script>";
-            exit;
-        } else {
-            $msg = "Invalid details please try again";
-            echo "<script>
-            alert('$msg');
-            window.location.href='../forms/login.html';
-            </script>";
-            exit;
+        }
+        else{
+            echo "<script> alert('Invalid User Password') 
+        window.location.href = '../forms/login.html'
+        </script>";
         }
     }
+    else{
+        echo "<script> alert('User Not Found') 
+        window.location.href = '../forms/login.html'
+        </script>";
+    }
+    
+    //if true then set user session for the user and redirect to the dasbboard
 }
-
 
 
 function resetPassword($email, $password)
 {
     //create a connection variable using the db function in config.php
     $conn = db();
-    // echo "<h1 style='color: red'>RESET YOUR PASSWORD (IMPLEMENT ME)</h1>";
+    
     //open connection to the database and check if username exist in the database
+    $check_sql = "SELECT * FROM `students` WHERE email = '$email' ";
+    $query = mysqli_query($conn, $check_sql);
+    $check = mysqli_num_rows($query);
     //if it does, replace the password with $password given
-
-    $query = " SELECT email FROM students WHERE email='$email'";
-    $result = mysqli_query($conn, $query);
-    if (mysqli_num_rows($result) >= 1) {
-        $sql = "UPDATE students set password='$password' where email='$email'";
-        if (mysqli_query($conn, $sql)) {
-            echo 'Password changed sucessfully';
-        } else {
-            echo "<script>alert('an error occured,try again')</script>";
+    if ($check > 0) {
+        $update_sql = "UPDATE `students` SET `password` = '$password' WHERE `email` = '$email' ";
+        $query = mysqli_query($conn, $update_sql);
+        if($query){
+            echo "<script> alert('User Password Successfully Changed') 
+        window.location.href = '../forms/login.html'
+        </script>";
         }
-    } else {
-        echo "<script>alert('User does not exist')</script>";
-        header('refresh:2;url=../forms/login.html');
+        else{
+            echo "<script> alert('Unable to reset user password') 
+        window.location.href = '../forms/resetpassword.html'
+        </script>";
+        }
     }
+    else {
+        echo "<script> alert('User Email Not Found') 
+        window.location.href = '../forms/resetpassword.html'
+        </script>";
+    }
+
 }
 
 function getusers()
 {
     $conn = db();
-    $query = 'SELECT * FROM Students';
-    $result = mysqli_query($conn, $query);
+    $sql = "SELECT * FROM Students";
+    $result = mysqli_query($conn, $sql);
     echo "<html>
     <head></head>
     <body>
@@ -124,49 +126,38 @@ function getusers()
         while ($data = mysqli_fetch_assoc($result)) {
             //show data
             echo "<tr style='height: 30px'>" .
-                "<td style='width: 50px; background: blue'>" .
-                $data['id'] .
+                "<td style='width: 50px; background: blue'>" . $data['id'] . "</td>
+                <td style='width: 150px'>" . $data['full_names'] .
+                "</td> <td style='width: 150px'>" . $data['email'] .
+                "</td> <td style='width: 150px'>" . $data['gender'] .
+                "</td> <td style='width: 150px'>" . $data['country'] .
                 "</td>
-                <td style='width: 150px'>" .
-                $data['full_names'] .
-                "</td> <td style='width: 150px'>" .
-                $data['email'] .
-                "</td> <td style='width: 150px'>" .
-                $data['gender'] .
-                "</td> <td style='width: 150px'>" .
-                $data['country'] .
-                "</td> <td style='width: 150px'> 
-                <form action='action.php' method='POST'>
+                <form action='action.php' method='post'>
                 <input type='hidden' name='id'" .
-                'value=' .
-                $data['id'] .
-                '>' .
-                "<button type='submit', name='delete'> DELETE </button></form></td>" .
-                '</tr>';
+                "value=" . $data['id'] . ">" .
+                "<td style='width: 150px'> <button type='submit', name='delete'> DELETE </button>" .
+                "</tr>";
         }
-        echo '</table></table></center></body></html>';
+        echo "</table></table></center></body></html>";
     }
     //return users from the database
     //loop through the users and display them on a table
 }
 
-
-
 function deleteaccount($id)
 {
     $conn = db();
     //delete user with the given id from the database
-    if (
-        mysqli_num_rows(
-            mysqli_query($conn, "SELECT * FROM students WHERE id=$id")
-        ) >= 1
-    ) {
-        $query = "DELETE FROM students WHERE id='$id'";
-        if (mysqli_query($conn, $query)) {
-            echo "<script>alert('deleted sucessfully')</script><br>";
-            header('refresh:1;url=action.php?all=');
-        } else {
-            echo "<script>alert('error')</script>";
-        }
+    $delete_sql = "DELETE FROM `students` WHERE id = '$id' ";
+    $query = mysqli_query($conn,$delete_sql);
+    if($query){
+        echo "<script> alert('User Deleted Successfully !!')</script>";
+        // show all users after deletion
+        getusers();
+    }
+    else {
+        echo "<script> alert('Unable To Delete User')</script>";
+        // Go to previous page with javascript
+        echo "<script> window.history.back() </script>";
     }
 }

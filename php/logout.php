@@ -1,10 +1,28 @@
 <?php
 
-//logout session
-
+// logout session
 session_start();
-if (isset($_SESSION)) {
-    session_unset();
-    session_destroy();
-    header('location:../forms/login.html');
+
+function logout()
+{
+    // check if user is logged in
+    if(isset($_SESSION['username'])) {
+        // delete user datails
+        unset($_SESSION['username']);
+        // destroy session
+        session_destroy();
+        // redirect user to login page
+        header('location: ../forms/login.html');
+    } 
+
+    else {
+        // destroy session
+        session_destroy();
+        // redirect user to login page
+        header('location: ../forms/login.html');
+    }
 }
+
+// call logout function
+logout();
+?>
