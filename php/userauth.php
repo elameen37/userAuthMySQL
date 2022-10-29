@@ -93,13 +93,27 @@ function resetPassword($email, $password)
     // echo "<h1 style='color: red'>RESET YOUR PASSWORD (IMPLEMENT ME)</h1>";
     //open connection to the database and check if username exist in the database
     //if it does, replace the password with $password given
+
+    $query = " SELECT email FROM students WHERE email='$email'";
+    $result = mysqli_query($conn, $query);
+    if (mysqli_num_rows($result) >= 1) {
+        $sql = "UPDATE students set password='$password' where email='$email'";
+        if (mysqli_query($conn, $sql)) {
+            echo 'Password changed sucessfully';
+        } else {
+            echo "<script>alert('an error occured,try again')</script>";
+        }
+    } else {
+        echo "<script>alert('User does not exist')</script>";
+        header('refresh:2;url=../forms/login.html');
+    }
 }
 
 function getusers()
 {
     $conn = db();
-    $sql = "SELECT * FROM Students";
-    $result = mysqli_query($conn, $sql);
+    $query = 'SELECT * FROM Students';
+    $result = mysqli_query($conn, $query);
     echo "<html>
     <head></head>
     <body>
@@ -110,37 +124,49 @@ function getusers()
         while ($data = mysqli_fetch_assoc($result)) {
             //show data
             echo "<tr style='height: 30px'>" .
-                "<td style='width: 50px; background: blue'>" . $data['id'] . "</td>
-                <td style='width: 150px'>" . $data['full_names'] .
-                "</td> <td style='width: 150px'>" . $data['email'] .
-                "</td> <td style='width: 150px'>" . $data['gender'] .
-                "</td> <td style='width: 150px'>" . $data['country'] .
+                "<td style='width: 50px; background: blue'>" .
+                $data['id'] .
                 "</td>
-                <form action='action.php' method='post'>
+                <td style='width: 150px'>" .
+                $data['full_names'] .
+                "</td> <td style='width: 150px'>" .
+                $data['email'] .
+                "</td> <td style='width: 150px'>" .
+                $data['gender'] .
+                "</td> <td style='width: 150px'>" .
+                $data['country'] .
+                "</td> <td style='width: 150px'> 
+                <form action='action.php' method='POST'>
                 <input type='hidden' name='id'" .
-                "value=" . $data['id'] . ">" .
-                "<td style='width: 150px'> <button type='submit', name='delete'> DELETE </button>" .
-                "</tr>";
+                'value=' .
+                $data['id'] .
+                '>' .
+                "<button type='submit', name='delete'> DELETE </button></form></td>" .
+                '</tr>';
         }
-        echo "</table></table><a href='../dashboard.php'>Back</a></center></body></html>";
+        echo '</table></table></center></body></html>';
     }
     //return users from the database
     //loop through the users and display them on a table
 }
 
+
+
 function deleteaccount($id)
 {
     $conn = db();
     //delete user with the given id from the database
-    $del = "delete from Students where id=$id";
-    mysqli_query($conn, $del);
-    {
-        $msg = "Delete Successful";
-        echo "<script>
-        alert('$msg');
-        window.location.href='../dashboard.php';
-        </script>";
-        exit;
+    if (
+        mysqli_num_rows(
+            mysqli_query($conn, "SELECT * FROM students WHERE id=$id")
+        ) >= 1
+    ) {
+        $query = "DELETE FROM students WHERE id='$id'";
+        if (mysqli_query($conn, $query)) {
+            echo "<script>alert('deleted sucessfully')</script><br>";
+            header('refresh:1;url=action.php?all=');
+        } else {
+            echo "<script>alert('error')</script>";
+        }
     }
-    
 }
